@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+        http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+
+    <int:recipient-list-router id="createLifeCycleRequestChannelId" input-channel="createLifeCycleRequestChannel"
+                               default-output-channel="createLifeCycleReplyChannel"
+                               ignore-send-failures="false"
+                               apply-sequence="true">
+        <int:recipient selector-expression="payload.getOperation().getValue().equalsIgnoreCase('SUSPEND')" channel="createLifeCycleSuspendRequestChain"/>
+        <int:recipient selector-expression="payload.getOperation().getValue().equalsIgnoreCase('RESUME')" channel="createLifeCycleUnSuspendRequestChain"/>
+        <int:recipient selector-expression="payload.getOperation().getValue().equalsIgnoreCase('DELETE')" channel="createLifeCycleDeleteRequestChain"/>
+
+    </int:recipient-list-router>
+
+    <int:chain id="createLifecycleSuspendChainId" input-channel="createLifeCycleSuspendRequestChain"
+               output-channel="createLifeCycleReplyChannel">
+
+        <int:filter id="createLifecycleFilterId" ref="createLifecycleSuspendFilter" method="doValidateRequest"
+                    throw-exception-on-rejection="true"/>
+
+        <int:transformer id="createLifecycleTransformerId" ref="createLifecycleSuspendTransformer"
+                         method="doTransformRequest"/>
+
+        <int:service-activator id="createLifecycleId" ref="createLifecycleSuspendService"
+                               method="doOutboundServiceCall"/>
+
+        <int:transformer id="createLifecyleReplyTransformerId" ref="createLifecycleSuspendTransformer"
+                         method="doTransformResposne"/>
+
+    </int:chain>
+
+    <int:chain id="createLifecycleUnSuspendChainId" input-channel="createLifeCycleUnSuspendRequestChain"
+               output-channel="createLifeCycleReplyChannel">
+
+        <int:filter id="createLifecycleFilterId" ref="createLifecycleUnsuspendFilter" method="doValidateRequest"
+                    throw-exception-on-rejection="true"/>
+
+        <int:transformer id="createLifecycleTransformerId" ref="createLifecycleUnSuspendTransformer"
+                         method="doTransformRequest"/>
+
+        <int:service-activator id="createLifecycleId" ref="createLifecycleUnSuspendService"
+                               method="doOutboundServiceCall"/>
+
+        <int:transformer id="createLifecyleSuspendReplyTransformerId" ref="createLifecycleUnSuspendTransformer"
+                         method="doTransformResposne"/>
+
+    </int:chain>
+
+    <int:chain id="createLifecycleDeleteChainId" input-channel="createLifeCycleDeleteRequestChain"
+               output-channel="createLifeCycleReplyChannel">
+
+        <int:filter id="createLifecycleFilterId" ref="createLifecycleDeleteFilter" method="doValidateRequest"
+                    throw-exception-on-rejection="true"/>
+
+        <int:transformer id="createLifecycleTransformerId" ref="createLifecycleDeleteTransformer"
+                         method="doTransformRequest"/>
+
+        <int:service-activator id="createLifecycleId" ref="createLifecycleDeleteService"
+                               method="doOutboundServiceCall"/>
+
+        <int:transformer id="createLifecyleSuspendReplyTransformerId" ref="createLifecycleDeleteTransformer"
+                         method="doTransformResposne"/>
+
+    </int:chain>
+
+
+</beans>

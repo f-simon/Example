@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+        http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+
+    <int:chain id="createGetTokenChainId" input-channel="createGetTokenRequestChannel"
+               output-channel="createGetTokenReplyChannel">
+
+        <int:filter id="createGetTokenFilterId" ref="getTokenFilter" method="doValidateRequest"
+                    throw-exception-on-rejection="true"/>
+
+        <int:transformer id="createGettokenTransformerId" ref="getTokenTransformer"
+                         method="doTransformRequest"/>
+
+        <int:service-activator id="createGetTokenId" ref="getTokenService"
+                               method="doOutboundServiceCall"/>
+
+        <int:transformer id="createGetTokenTransformerId" ref="getTokenTransformer"
+                         method="doTransformResposne"/>
+
+    </int:chain>
+
+</beans>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+        http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+    <!-- Transact channel -->
+    <int:channel id="transactRequestChannel"/>
+    <int:channel id="transactReplyChannel"/>
+
+    <!-- Token channel -->
+    <int:channel id="createGetTokenRequestChannel"/>
+    <int:channel id="createGetTokenReplyChannel"/>
+
+    <!-- Start configuration for tokenize -->
+    <int:channel id="tokenizeRequestChannel"/>
+    <int:channel id="tokenizeReplyChannel"/>
+
+    <!-- Task channel -->
+    <int:channel id="getTaskStatusRequestChannel"/>
+    <int:channel id="getTaskStatusReplyChannel"/>
+
+    <!-- Lifecycle channel -->
+    <int:channel id="createLifeCycleRequestChannel"/>
+    <int:channel id="createLifeCycleReplyChannel"/>
+    <int:channel id="createLifeCycleSuspendRequestChain"/>
+    <int:channel id="createLifeCycleUnSuspendRequestChain"/>
+    <int:channel id="createLifeCycleDeleteRequestChain"/>
+
+    <int:gateway id="applicationGateway" service-interface="com.fdc.mtrg.network.token.gateway.ApplicationGateway">
+
+        <int:method request-channel="tokenizeRequestChannel" name="tokenize"
+                    reply-channel="tokenizeReplyChannel"/>
+
+        <int:method request-channel="searchTokensRequestChannel" name="searchTokens"
+                    reply-channel="searchTokensReplyChannel"/>
+
+        <int:method request-channel="transactRequestChannel" name="transact"
+                    reply-channel="transactReplyChannel"/>
+
+        <int:method request-channel="createLifeCycleRequestChannel" name="doLifeCycle"
+                    reply-channel="createLifeCycleReplyChannel"/>
+
+        <int:method request-channel="createGetTokenRequestChannel" name="doGetToken"
+                    reply-channel="createGetTokenReplyChannel"/>
+
+        <int:method request-channel="getCardMetadataRequestChannel" name="getCardMetadata"
+                    reply-channel="getCardMetadataReplyChannel"/>
+    </int:gateway>
+
+
+    <int:chain id="tokenizeChain" input-channel="tokenizeRequestChannel" output-channel="tokenizeReplyChannel">
+
+        <int:filter id="tokenizeFilterId" ref="tokenizeFilter" method="doValidateRequest"
+                    throw-exception-on-rejection="true"/>
+
+        <int:transformer id="tokenizeRequestTransformerId" ref="tokenizeTransformer"
+                         method="doTransformRequest"/>
+
+        <int:service-activator id="tokenizeServiceId" ref="tokenizeService"
+                               method="tokenize"/>
+
+        <int:transformer id="tokenizeResposneTransformerId" ref="tokenizeTransformer"
+                         method="doTransformResponse"/>
+    </int:chain>
+    <!-- End configuration for tokenize -->
+
+
+    <!-- Start Configuration for Transact api -->
+    <int:chain id="transactChain" input-channel="transactRequestChannel" output-channel="transactReplyChannel">
+
+        <int:filter id="transactFilterId" ref="transactFilter" method="doValidateRequest"
+                    throw-exception-on-rejection="true"/>
+
+        <int:transformer id="transactRequestTransformerId" ref="transactTransformer"
+                         method="doTransformRequest"/>
+
+        <int:service-activator id="transactServiceId" ref="transactService"
+                               method="doOutboundServiceCall"/>
+
+        <int:transformer id="transactResponseTransformerId" ref="transactTransformer"
+                         method="doTransformResponse"/>
+    </int:chain>
+    <!-- End Configuration for Transact api -->
+
+
+    <!-- Start configuration for searchTokens -->
+    <int:channel id="searchTokensRequestChannel"/>
+    <int:channel id="searchTokensReplyChannel"/>
+
+    <int:chain id="searchTokensChain" input-channel="searchTokensRequestChannel" output-channel="searchTokensReplyChannel">
+
+        <int:filter id="tokenizeFilterId" ref="tokenizeFilter" method="doValidateRequest"
+                    throw-exception-on-rejection="true"/>
+
+        <int:transformer id="searchTokensRequestTransformerId" ref="tokenizeTransformer"
+                         method="doTransformRequest"/>
+
+        <int:service-activator id="searchTokensServiceId" ref="tokenizeService"
+                               method="searchTokens"/>
+
+        <int:transformer id="searchTokensResposneTransformerId" ref="searchTokenTransformer"
+                         method="doTransformResponseForGetTokenDetails"/>
+
+        <int:service-activator id="createGetTokenId" ref="getTokenService"
+                               method="doOutboundServiceCall"/>
+
+        <int:transformer id="createGetTokenTransformerId" ref="getTokenTransformer"
+                         method="doTransformResposne"/>
+    </int:chain>
+
+    <!-- End configuration for searchTokens -->
+
+    <!-- Start configuration for getAsset   -->
+    <int:channel id="getCardMetadataRequestChannel"/>
+    <int:channel id="getCardMetadataReplyChannel"/>
+
+    <int:chain id="getCardMetadataChain" input-channel="getCardMetadataRequestChannel" output-channel="getCardMetadataReplyChannel">
+
+
+        <int:service-activator id="getCardMetadataServiceId" ref="getCardMetadataService"
+                               method="getCardMetadata"/>
+
+        <int:transformer id="getCardMetadataReplyTransformerId" ref="getCardMetadataTransformer"
+                         method="doCardMetadataTransformResposne"/>
+
+    </int:chain>
+    <!-- End configuration for getAsset   -->
+
+</beans>
